@@ -1,0 +1,344 @@
+/* ── MoodMorph Design System ─────────────────────────────────────────────────
+   Palette: deep void background, violet primary, per-mood accent colors
+   Type: Space Grotesk (display) + Inter (body)
+   Signature: the live waveform visualizer that bleeds behind the camera feed
+   ────────────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Inter:wght@400;500&display=swap');
+
+:root {
+  --bg:         #0a0a12;
+  --bg2:        #111120;
+  --bg3:        #16172a;
+  --border:     rgba(255,255,255,0.07);
+  --violet:     #7c3aed;
+  --violet-lt:  #a78bfa;
+  --cyan:       #06b6d4;
+  --text:       #e8e6f0;
+  --muted:      #6b7280;
+  --danger:     #ef4444;
+  --radius:     12px;
+  --radius-lg:  18px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+header {
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,10,18,0.8);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  background: linear-gradient(90deg, var(--violet-lt), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo span {
+  font-weight: 300;
+  opacity: 0.6;
+}
+
+.badge-live {
+  font-size: 0.65rem;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: rgba(124,58,237,0.15);
+  border: 1px solid rgba(124,58,237,0.3);
+  color: var(--violet-lt);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 24px;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  grid-template-rows: auto auto;
+  gap: 20px;
+}
+
+/* ── Cards ──────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(124,58,237,0.04), transparent 60%);
+  pointer-events: none;
+}
+
+.card-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+/* ── Video + Visualizer ─────────────────────────────────────────────────── */
+.video-wrap {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 4/3;
+}
+
+#video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scaleX(-1); /* mirror */
+}
+
+#visualizer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+#canvas { display: none; }
+
+/* ── Controls ───────────────────────────────────────────────────────────── */
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--violet);
+  color: #fff;
+  border-color: var(--violet);
+}
+.btn-primary:not(:disabled):hover { background: #6d28d9; }
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: rgba(239,68,68,0.3);
+}
+.btn-danger:not(:disabled):hover { background: rgba(239,68,68,0.1); }
+
+.btn-shift {
+  background: transparent;
+  color: var(--cyan);
+  border-color: rgba(6,182,212,0.3);
+}
+.btn-shift:not(:disabled):hover { background: rgba(6,182,212,0.1); }
+.btn-shift.shift-active {
+  background: rgba(6,182,212,0.15);
+  border-color: var(--cyan);
+}
+
+.vol-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  width: 80px;
+  height: 4px;
+  background: var(--bg3);
+  border-radius: 2px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--violet-lt);
+  cursor: pointer;
+}
+
+#status {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* ── Emotion Display ────────────────────────────────────────────────────── */
+#emotion-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--violet-lt);
+  margin-bottom: 10px;
+  transition: color 0.4s;
+  min-height: 3.2rem;
+}
+
+.conf-wrap {
+  margin-bottom: 14px;
+}
+.conf-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+}
+.conf-track {
+  height: 4px;
+  background: var(--bg3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+#confidence-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--violet), var(--cyan));
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.4s;
+}
+
+.music-info {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+.music-info span { color: var(--violet-lt); }
+
+#shift-label {
+  display: none;
+  font-size: 0.72rem;
+  color: var(--cyan);
+  padding: 4px 10px;
+  background: rgba(6,182,212,0.08);
+  border: 1px solid rgba(6,182,212,0.2);
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+/* ── Emotion Bars ───────────────────────────────────────────────────────── */
+.emo-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.emo-name {
+  width: 60px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: capitalize;
+  flex-shrink: 0;
+}
+.emo-track {
+  flex: 1;
+  height: 4px;
+  background: var(--bg3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.emo-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s;
+}
+.emo-pct {
+  font-size: 0.68rem;
+  color: var(--muted);
+  width: 30px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── History ────────────────────────────────────────────────────────────── */
+.hist-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+}
+.hist-item:last-child { border-bottom: none; }
+.hist-time { color: var(--muted); font-size: 0.68rem; }
+
+/* ── Circumplex Chart ───────────────────────────────────────────────────── */
+#circumplex {
+  display: block;
+  margin: 0 auto;
+}
+
+/* ── Bottom span card ───────────────────────────────────────────────────── */
+.span-card {
+  grid-column: 1 / -1;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  main { grid-template-columns: 1fr; }
+  .span-card { grid-column: 1; }
+  header { padding: 14px 16px; }
+  #emotion-label { font-size: 1.8rem; }
+}

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoodMorph — Real-Time Emotion-Adaptive Music</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<header>
+  <div class="logo">MoodMorph</div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <span class="badge-live">● Live</span>
+    <span style="font-size:0.7rem;color:var(--muted)">Valence · Arousal · Circumplex</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── Column 1: Camera + Visualizer ──────────────────────────────────── -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+
+    <div class="card">
+      <p class="card-title">Live Camera Feed</p>
+      <div class="video-wrap">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="visualizer" width="640" height="480"></canvas>
+        <canvas id="canvas" width="320" height="240"></canvas>
+      </div>
+      <div class="controls">
+        <button class="btn btn-primary" id="btn-start">▶ Start</button>
+        <button class="btn btn-danger" id="btn-stop" disabled>■ Stop</button>
+        <button class="btn btn-shift" id="btn-shift" disabled>⬆ Shift Mood</button>
+        <div class="vol-wrap">
+          🔊
+          <input type="range" id="vol-slider" min="0" max="1" step="0.05" value="0.8" />
+        </div>
+      </div>
+      <p id="status">Click Start to begin emotion detection.</p>
+    </div>
+
+    <!-- ── Russell Circumplex Chart ──────────────────────────────────────── -->
+    <div class="card">
+      <p class="card-title">Russell Circumplex Model — Your Position</p>
+      <canvas id="circumplex" width="560" height="260"></canvas>
+    </div>
+
+  </div>
+
+  <!-- ── Column 2: Emotion + Music Panel ───────────────────────────────── -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+
+    <div class="card">
+      <p class="card-title">Detected Emotion</p>
+      <div id="emotion-label">—</div>
+      <div class="conf-wrap">
+        <div class="conf-label">
+          <span>Confidence</span>
+          <span id="confidence-val">0%</span>
+        </div>
+        <div class="conf-track">
+          <div id="confidence-bar"></div>
+        </div>
+      </div>
+      <div id="shift-label">Shifting → Calm</div>
+      <p class="music-info card-title">Active Music Profile</p>
+      <p class="music-info" id="music-info">—</p>
+    </div>
+
+    <div class="card">
+      <p class="card-title">All Emotions</p>
+      <div id="emotion-bars">
+        <p style="color:var(--muted);font-size:0.75rem">Waiting for detection...</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="card-title">Mood History</p>
+      <div id="history-list">
+        <p style="color:var(--muted);font-size:0.75rem">No history yet.</p>
+      </div>
+    </div>
+
+    <div class="card" style="background:linear-gradient(135deg,#1a1035,#0c1a35)">
+      <p class="card-title">How It Works</p>
+      <div style="font-size:0.74rem;color:var(--muted);line-height:1.8">
+        <p>📷 <strong style="color:var(--text)">DeepFace</strong> analyzes your facial expression every 300ms</p>
+        <p>🧠 <strong style="color:var(--text)">Circumplex model</strong> maps emotion → valence/arousal</p>
+        <p>🎵 <strong style="color:var(--text)">Web Audio API</strong> synthesizes music matching your scale + BPM</p>
+        <p>⬆ <strong style="color:var(--text)">Shift mode</strong> gradually steers you toward calm/happy</p>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<script src="/static/js/audio.js"></script>
+<script src="/static/js/app.js"></script>
+<script>
+/* ── Russell Circumplex canvas renderer ───────────────────────────────────── */
+(function() {
+  const EMOTIONS = {
+    happy:    { v: 0.9,  a: 0.7  },
+    sad:      { v: 0.15, a: 0.2  },
+    angry:    { v: 0.1,  a: 0.95 },
+    fear:     { v: 0.1,  a: 0.9  },
+    surprise: { v: 0.7,  a: 0.85 },
+    disgust:  { v: 0.1,  a: 0.6  },
+    neutral:  { v: 0.5,  a: 0.4  },
+  };
+
+  const COLORS = {
+    happy:"#f59e0b", sad:"#3b82f6", angry:"#ef4444",
+    fear:"#8b5cf6", surprise:"#06b6d4", disgust:"#84cc16", neutral:"#6b7280",
+  };
+
+  const cvs = document.getElementById("circumplex");
+  const ctx = cvs.getContext("2d");
+  let currentV = 0.5, currentA = 0.4, currentColor = "#6b7280";
+  let targetV = 0.5, targetA = 0.4;
+
+  function draw() {
+    const W = cvs.width, H = cvs.height;
+    const cx = W / 2, cy = H / 2;
+    const R = Math.min(W, H) * 0.42;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Background grid circles
+    ctx.strokeStyle = "rgba(255,255,255,0.05)";
+    ctx.lineWidth = 1;
+    [0.33, 0.66, 1].forEach(r => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, R * r, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+
+    // Axes
+    ctx.strokeStyle = "rgba(255,255,255,0.08)";
+    ctx.beginPath(); ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R); ctx.stroke();
+
+    // Axis labels
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.font = "10px Inter, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("High Arousal", cx, cy - R - 6);
+    ctx.fillText("Low Arousal", cx, cy + R + 14);
+    ctx.textAlign = "left";
+    ctx.fillText("Positive", cx + R * 0.5, cy - 5);
+    ctx.textAlign = "right";
+    ctx.fillText("Negative", cx - R * 0.5, cy - 5);
+
+    // Fixed emotion dots
+    Object.entries(EMOTIONS).forEach(([name, pos]) => {
+      const x = cx + (pos.v - 0.5) * 2 * R;
+      const y = cy - (pos.a - 0.5) * 2 * R;
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = COLORS[name] + "80";
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.font = "9px Inter";
+      ctx.textAlign = "center";
+      ctx.fillText(name, x, y - 8);
+    });
+
+    // Smooth lerp to target
+    currentV += (targetV - currentV) * 0.08;
+    currentA += (targetA - currentA) * 0.08;
+
+    const px = cx + (currentV - 0.5) * 2 * R;
+    const py = cy - (currentA - 0.5) * 2 * R;
+
+    // Glow
+    const grad = ctx.createRadialGradient(px, py, 0, px, py, 24);
+    grad.addColorStop(0, currentColor + "cc");
+    grad.addColorStop(1, currentColor + "00");
+    ctx.beginPath(); ctx.arc(px, py, 24, 0, Math.PI * 2);
+    ctx.fillStyle = grad; ctx.fill();
+
+    // Main dot
+    ctx.beginPath(); ctx.arc(px, py, 9, 0, Math.PI * 2);
+    ctx.fillStyle = currentColor; ctx.fill();
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+
+  // Hook into app updates
+  const origHandle = MoodMorphApp.prototype._handleEmotion;
+  MoodMorphApp.prototype._handleEmotion = function(data) {
+    origHandle.call(this, data);
+    const profile = EMOTIONS[data.emotion] || EMOTIONS.neutral;
+    targetV = profile.v;
+    targetA = profile.a;
+    currentColor = COLORS[data.emotion] || "#6b7280";
+  };
+})();
+</script>
+
+</body>
+</html>
