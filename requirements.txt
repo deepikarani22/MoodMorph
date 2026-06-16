@@ -3,8 +3,8 @@ uvicorn[standard]
 websockets
 deepface
 opencv-python-headless
-numpy
-tensorflow~=2.16.0
+numpy<2.0
+tensorflow~=2.15.0
 tf-keras
 librosa
 python-multipart
